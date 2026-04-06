@@ -1,0 +1,78 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<DxGrid Data="@forecasts">
+    <ToolbarTemplate Context="ctx">
+        <DxButton
+            CssClass="print-button"
+            Click="async () => await PrintGrid(ctx.Grid, JS)"
+            Enabled="!IsPrinting">
+            @if(IsPrinting) {
+                <DxWaitIndicator Visible="true" />
+            }
+            else {
+                <span>Print</span>
+            }
+        </DxButton>
+    </ToolbarTemplate>
+    <Columns>
+        <DxGridDataColumn Caption="Date" FieldName="Date" />
+        <DxGridDataColumn Caption="Temperature (C)" FieldName="TemperatureC" />
+        <DxGridDataColumn Caption="Temperature (F)" FieldName="TemperatureF" />
+        <DxGridDataColumn Caption="Summary" FieldName="Summary" />
+    </Columns>
+</DxGrid>
+
+@code{
+    private WeatherForecast[]? forecasts;
+    private readonly SemaphoreSlim printLock = new(1, 1);
+    private bool IsPrinting => printLock.CurrentCount == 0;
+
+    /// <summary>
+    /// Loads entire grid content into the memory and passes it to the JavaScript function for printing.
+    /// </summary>
+    /// <param name="grid">The grid to be printed.</param>
+    /// <param name="js">The JavaScript runtime for invoking JS functions.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task PrintGrid(IGrid grid, IJSRuntime js) {
+        if(!await printLock.WaitAsync(0))
+            return;
+        await Task.Yield();
+        try {
+            ArgumentNullException.ThrowIfNull(grid);
+            ArgumentNullException.ThrowIfNull(js);
+            string jsMethodName = "downloadGridFileFromStream";
+            using var ms = new MemoryStream();
+            await grid.ExportToPdfAsync(ms);
+            ms.Seek(0, SeekOrigin.Begin);
+            using var streamRef = new DotNetStreamReference(ms);
+            await js.InvokeVoidAsync(jsMethodName, streamRef);
+        }
+        catch(ArgumentNullException) { }
+        catch(JSException) { }
+        catch(JSDisconnectedException) { }
+        catch(ObjectDisposedException) { }
+        catch(Exception ex) {
+            Console.Error.WriteLine(ex);
+        }
+        finally {
+            printLock.Release();
+        }
+    }
+
+    protected override void OnInitialized() {
+        int rowsCount = 5000;
+        DateOnly startDate = DateOnly.FromDateTime(DateTime.Now);
+        string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
+        forecasts = Enumerable.Range(1, rowsCount).Select(index => new WeatherForecast(
+                Date: startDate.AddDays(index),
+                TemperatureC: Random.Shared.Next(-20, 55),
+                Summary: summaries[Random.Shared.Next(summaries.Length)]
+            )).ToArray();
+    }
+
+    private record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary) {
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    }
+}

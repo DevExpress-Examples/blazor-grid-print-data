@@ -1,4 +1,4 @@
-﻿using BlazorBlankServer.Components;
+﻿using GridPrint.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 

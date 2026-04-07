@@ -1,4 +1,4 @@
-﻿async function downloadGridFileFromStream(streamRef) {
+async function printGridFromStream(streamRef) {
     const url = await generateURLFromStream(streamRef);
     const iframe = createHiddenIframeInDOM();
 
@@ -16,7 +16,7 @@
 
 async function generateURLFromStream(streamRef) {
     const arrayBuffer = await streamRef.arrayBuffer();
-    var blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+    const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
     return URL.createObjectURL(blob);
 }
 

@@ -4,11 +4,11 @@
 
 <DxGrid Data="@forecasts">
     <ToolbarTemplate Context="ctx">
-        <DxButton
-            CssClass="print-button"
-            Click="async () => await PrintGrid(ctx.Grid, JS)"
-            Enabled="!IsPrinting">
-            @if(IsPrinting) {
+        <DxButton Click="() => PrintGridAsync(ctx.Grid)"
+                  RenderStyle="ButtonRenderStyle.Secondary"
+                  CssClass="print-button"
+                  Enabled="!Busy">
+            @if(Busy) {
                 <DxWaitIndicator Visible="true" />
             }
             else {
@@ -24,40 +24,45 @@
     </Columns>
 </DxGrid>
 
-@code{
+@code {
+    private const string JS_PRINT_METHOD_NAME = "printGridFromStream";
     private WeatherForecast[]? forecasts;
-    private readonly SemaphoreSlim printLock = new(1, 1);
-    private bool IsPrinting => printLock.CurrentCount == 0;
+    private readonly object lockObject = new();
+    private bool busy;
 
-    /// <summary>
-    /// Loads entire grid content into the memory and passes it to the JavaScript function for printing.
-    /// </summary>
-    /// <param name="grid">The grid to be printed.</param>
-    /// <param name="js">The JavaScript runtime for invoking JS functions.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task PrintGrid(IGrid grid, IJSRuntime js) {
-        if(!await printLock.WaitAsync(0))
+    private bool Busy {
+        get {
+            lock(lockObject) {
+                return busy;
+            }
+        }
+        set {
+            lock(lockObject) {
+                busy = value;
+            }
+        }
+    }
+
+    private async Task PrintGridAsync(IGrid grid) {
+        if(Busy)
             return;
+
+        Busy = true;
         await Task.Yield();
+
         try {
             ArgumentNullException.ThrowIfNull(grid);
-            ArgumentNullException.ThrowIfNull(js);
-            string jsMethodName = "downloadGridFileFromStream";
             using var ms = new MemoryStream();
             await grid.ExportToPdfAsync(ms);
             ms.Seek(0, SeekOrigin.Begin);
             using var streamRef = new DotNetStreamReference(ms);
-            await js.InvokeVoidAsync(jsMethodName, streamRef);
+            await JS.InvokeVoidAsync(JS_PRINT_METHOD_NAME, streamRef);
         }
-        catch(ArgumentNullException) { }
-        catch(JSException) { }
-        catch(JSDisconnectedException) { }
-        catch(ObjectDisposedException) { }
         catch(Exception ex) {
-            Console.Error.WriteLine(ex);
+            Console.Error.WriteLine(ex.Message);
         }
         finally {
-            printLock.Release();
+            Busy = false;
         }
     }
 

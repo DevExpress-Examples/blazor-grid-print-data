@@ -7,8 +7,8 @@
         <DxButton Click="() => PrintGridAsync(ctx.Grid)"
                   RenderStyle="ButtonRenderStyle.Secondary"
                   CssClass="print-button"
-                  Enabled="!Busy">
-            @if(Busy) {
+                  Enabled="!busy">
+            @if(busy) {
                 <DxWaitIndicator Visible="true" />
             }
             else {
@@ -27,27 +27,13 @@
 @code {
     private const string JS_PRINT_METHOD_NAME = "printGridFromStream";
     private WeatherForecast[]? forecasts;
-    private readonly object lockObject = new();
     private bool busy;
 
-    private bool Busy {
-        get {
-            lock(lockObject) {
-                return busy;
-            }
-        }
-        set {
-            lock(lockObject) {
-                busy = value;
-            }
-        }
-    }
-
     private async Task PrintGridAsync(IGrid grid) {
-        if(Busy)
+        if(busy)
             return;
 
-        Busy = true;
+        busy = true;
         await Task.Yield();
 
         try {
@@ -62,7 +48,7 @@
             Console.Error.WriteLine(ex.Message);
         }
         finally {
-            Busy = false;
+            busy = false;
         }
     }
 

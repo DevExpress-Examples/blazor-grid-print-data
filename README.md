@@ -11,14 +11,14 @@ To print Blazor Grid data, you must:
 1. Add a [DevExpress Blazor Grid](https://docs.devexpress.com/Blazor/403143/components/grid) to a page and bind it to data.
 1. Add a [DevExpress Blazor Button](https://docs.devexpress.com/Blazor/405052/components/utility-controls/button) to the [Grid Toolbar](https://docs.devexpress.com/Blazor/DevExpress.Blazor.DxGrid.ToolbarTemplate#remarks).
 1. In the button's [Click](https://docs.devexpress.com/Blazor/DevExpress.Blazor.DxButtonBase.Click) event handler:
-    1. Disable the button to prevent repeated clicks while the request is processed.
-    1. Call the [ExportToPdfAsync](https://docs.devexpress.com/Blazor/DevExpress.Blazor.DxGrid.ExportToPdfAsync(System.IO.Stream-DevExpress.Blazor.GridPdfExportOptions)) method to export Grid data to a PDF stream. The exported PDF reflects the current Grid state (filters, sort order, and grouping) and is ready for printing.
-    1. Wrap the PDF stream in a [DotNetStreamReference](https://learn.microsoft.com/en-us/dotnet/api/microsoft.jsinterop.dotnetstreamreference) and pass it to JavaScript.
-    1. Re-enable the button.
+    - Disable the button to prevent repeated clicks while the request is processed.
+    - Call the [ExportToPdfAsync](https://docs.devexpress.com/Blazor/DevExpress.Blazor.DxGrid.ExportToPdfAsync(System.IO.Stream-DevExpress.Blazor.GridPdfExportOptions)) method to export Grid data to a PDF stream. The exported PDF reflects the current Grid state (filters, sort order, and grouping) and is ready for printing.
+    - Wrap the PDF stream in a [DotNetStreamReference](https://learn.microsoft.com/en-us/dotnet/api/microsoft.jsinterop.dotnetstreamreference) and pass it to JavaScript.
+    - Re-enable the button.
 1. In JavaScript:
-    1. Convert the stream to a PDF [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob), create an object URL, and load it into a hidden [iframe](https://www.w3schools.com/tags/tag_iframe.asp).
-    1. Invoke the browser's print dialog for the [iframe](https://www.w3schools.com/tags/tag_iframe.asp).
-    1. Once the print dialog closes, remove the [iframe](https://www.w3schools.com/tags/tag_iframe.asp) and revoke the object URL.
+    - Convert the stream to a PDF [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob), create an object URL, and load it into a hidden [iframe](https://www.w3schools.com/tags/tag_iframe.asp).
+    - Invoke the browser's print dialog for the [iframe](https://www.w3schools.com/tags/tag_iframe.asp).
+    - Once the print dialog closes, remove the [iframe](https://www.w3schools.com/tags/tag_iframe.asp) and revoke the object URL.
 1. _Optional._ Display the [DevExpress Blazor Wait Indicator](https://docs.devexpress.com/Blazor/405056/components/utility-controls/wait-indicator) within the **Print** toolbar button while the print request is processed.
 
 ## Files to Review
